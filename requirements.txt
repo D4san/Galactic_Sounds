@@ -1,0 +1,7 @@
+flask
+numpy
+pandas
+matplotlib
+astropy
+mido
+midiutil

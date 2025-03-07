@@ -1,0 +1,46 @@
+/* Fuente y fondo galáctico */
+body.galactic-bg {
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    background-attachment: fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Añadir un sutil efecto de estrellas parpadeantes (usando una textura de fondo) */
+  body.galactic-bg::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Ajustes en tarjetas para un look más moderno y redondeado */
+  .card {
+    border-radius: 15px;
+  }
+  
+  /* Personalización de formularios y controles */
+  .form-control, .form-select, .form-range {
+    border-radius: 5px;
+  }
+  
+  /* Botones con transición suave */
+  .btn {
+    transition: all 0.3s ease;
+  }
+  
+  .btn:hover {
+    transform: scale(1.02);
+  }
+  
+  /* Opcional: Puedes agregar más animaciones o efectos según lo requieras */
+  
