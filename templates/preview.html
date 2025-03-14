@@ -5,6 +5,8 @@
   <title>Preview del Espectro y Reproducción</title>
   <!-- Bootstrap CSS para mejorar estética (opcional) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <!-- Tone.js -->
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <style>
@@ -61,86 +63,112 @@
   <div class="container my-4">
     <h1 class="text-center mb-4">Preview del Espectro</h1>
     
-    <!-- Tarjeta con el gráfico -->
+    <!-- Tarjeta con el gráfico y controles en layout horizontal -->
     <div class="card shadow-sm p-4 mb-4">
-      <div class="image-container" id="flux-container">
-        <!-- La imagen generada del espectro -->
-        <img src="data:image/png;base64,{{ combined_img }}" alt="Espectro" id="flux-image" class="img-fluid">
-        <div class="progress-bar-custom" id="flux-progress" style="left:0;"></div>
-      </div>
-      
-      <!-- Controles de reproducción -->
-      <div class="mb-3">
-        <div class="row mb-2">
-          <div class="col-md-6">
-            <label for="emissionSynthSelect" class="form-label">Sintetizador para Emisión:</label>
-            <select id="emissionSynthSelect" class="form-select">
-              <option value="synth">Synth</option>
-              <option value="fm">FMSynth</option>
-              <option value="am">AMSynth</option>
-              <option value="mono">MonoSynth</option>
-            </select>
+      <div class="row">
+        <!-- Columna izquierda: Espectro -->
+        <div class="col-md-8">
+          <div class="image-container" id="flux-container">
+            <!-- La imagen generada del espectro -->
+            <img src="data:image/png;base64,{{ combined_img }}" alt="Espectro" id="flux-image" class="img-fluid" style="max-width:100%; height:auto;">
+            <div class="progress-bar-custom" id="flux-progress" style="left:0;"></div>
           </div>
-          <div class="col-md-6">
-            <label for="absorptionSynthSelect" class="form-label">Sintetizador para Absorción:</label>
-            <select id="absorptionSynthSelect" class="form-select">
-              <option value="synth">Synth</option>
-              <option value="fm">FMSynth</option>
-              <option value="am">AMSynth</option>
-              <option value="mono">MonoSynth</option>
-            </select>
+          
+          <!-- Control de velocidad y timeline (debajo del espectro) -->
+          <div class="row align-items-center mt-3">
+            <div class="col-md-6">
+              <label for="speed" class="form-label">Velocidad:</label>
+              <input type="range" id="speed" min="0.5" max="3" step="0.1" value="1" class="form-range">
+              <span id="speed-value" class="fw-bold text-white">1.0x</span>
+            </div>
+            <div class="col-md-6">
+              <label for="timeline" class="form-label">Timeline:</label>
+              <input type="range" id="timeline" min="0" step="1" value="0" class="form-range">
+              <span id="timeline-value" class="fw-bold text-white">0</span>
+            </div>
+          </div>
+          
+          <!-- Controles de selección de rango de longitud de onda -->
+          <div class="card bg-dark mt-3 p-3">
+            <h5 class="text-white mb-3">Selección de Rango de Longitud de Onda</h5>
+            <form id="range-form" action="/preview" method="post">
+              <input type="hidden" name="temp_file" value="{{ temp_file }}">
+              <input type="hidden" name="nombre" value="{{ nombre_obra }}">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="min_wl" class="form-label text-white">Mínimo (Å):</label>
+                  <input type="number" id="min_wl" name="min_wl" class="form-control form-control-sm" step="0.1">
+                </div>
+                <div class="col-md-6">
+                  <label for="max_wl" class="form-label text-white">Máximo (Å):</label>
+                  <input type="number" id="max_wl" name="max_wl" class="form-control form-control-sm" step="0.1">
+                </div>
+              </div>
+              <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary btn-sm">Aplicar Filtro</button>
+                <button type="button" id="reset-range" class="btn btn-secondary btn-sm">Ver Espectro Completo</button>
+              </div>
+            </form>
           </div>
         </div>
         
-        <!-- Controles de volumen -->
-        <div class="row mb-2">
-          <div class="col-md-4">
-            <label for="overallVolume" class="form-label">Volumen General:</label>
+        <!-- Columna derecha: Controles -->
+        <div class="col-md-4">
+          <!-- Controles de Emisión -->
+          <div class="card bg-dark mb-3 p-2">
+            <div class="d-flex align-items-center mb-2">
+              <div class="form-check form-switch me-2">
+                <input class="form-check-input" type="checkbox" id="emissionCheck" checked>
+                <label class="form-check-label text-white" for="emissionCheck">Emisión</label>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label for="emissionSynthSelect" class="form-label text-white">Sintetizador:</label>
+              <select id="emissionSynthSelect" class="form-select form-select-sm">
+                <option value="synth">Synth</option>
+                <option value="fm">FMSynth</option>
+                <option value="am">AMSynth</option>
+                <option value="mono">MonoSynth</option>
+                <option value="pluck">PluckSynth</option>
+                <option value="membrane">MembraneSynth</option>
+                <option value="metal">MetalSynth</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Controles de Absorción -->
+          <div class="card bg-dark mb-3 p-2">
+            <div class="d-flex align-items-center mb-2">
+              <div class="form-check form-switch me-2">
+                <input class="form-check-input" type="checkbox" id="absorptionCheck" checked>
+                <label class="form-check-label text-white" for="absorptionCheck">Absorción</label>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label for="absorptionSynthSelect" class="form-label text-white">Sintetizador:</label>
+              <select id="absorptionSynthSelect" class="form-select form-select-sm">
+                <option value="synth">Synth</option>
+                <option value="fm">FMSynth</option>
+                <option value="am">AMSynth</option>
+                <option value="mono">MonoSynth</option>
+                <option value="pluck">PluckSynth</option>
+                <option value="membrane">MembraneSynth</option>
+                <option value="metal">MetalSynth</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Control de volumen general -->
+          <div class="mb-3">
+            <label for="overallVolume" class="form-label">Volumen:</label>
             <input type="range" id="overallVolume" min="0" max="1" step="0.01" value="1" class="form-range">
             <span id="overallVolumeValue" class="fw-bold text-white">1.00</span>
           </div>
-          <div class="col-md-4">
-            <label for="emissionVolume" class="form-label">Volumen Emisión:</label>
-            <input type="range" id="emissionVolume" min="0" max="1" step="0.01" value="1" class="form-range">
-            <span id="emissionVolumeValue" class="fw-bold text-white">1.00</span>
-          </div>
-          <div class="col-md-4">
-            <label for="absorptionVolume" class="form-label">Volumen Absorción:</label>
-            <input type="range" id="absorptionVolume" min="0" max="1" step="0.01" value="1" class="form-range">
-            <span id="absorptionVolumeValue" class="fw-bold text-white">1.00</span>
-          </div>
-        </div>
-        
-        <!-- Checkboxes para activar cada señal -->
-        <div class="mb-3">
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="emissionCheck" checked>
-            <label class="form-check-label text-white" for="emissionCheck">Emisión</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="absorptionCheck" checked>
-            <label class="form-check-label text-white" for="absorptionCheck">Absorción</label>
-          </div>
-        </div>
-        
-        <!-- Botones de reproducción -->
-        <div class="mb-3">
-          <button id="play" class="btn btn-success me-2">Play</button>
-          <button id="pause" class="btn btn-warning me-2">Pause</button>
-          <button id="restart" class="btn btn-secondary">Restart</button>
-        </div>
-        
-        <!-- Control de velocidad y timeline -->
-        <div class="row align-items-center mb-2">
-          <div class="col-md-4">
-            <label for="speed" class="form-label">Velocidad:</label>
-            <input type="range" id="speed" min="0.5" max="3" step="0.1" value="1" class="form-range">
-            <span id="speed-value" class="fw-bold text-white">1.0x</span>
-          </div>
-          <div class="col-md-4">
-            <label for="timeline" class="form-label">Timeline:</label>
-            <input type="range" id="timeline" min="0" step="1" value="0" class="form-range">
-            <span id="timeline-value" class="fw-bold text-white">0</span>
+          
+          <!-- Botones de reproducción con iconos -->
+          <div class="mb-3">
+            <button id="playPause" class="btn btn-success me-2"><i class="bi bi-play-fill"></i></button>
+            <button id="restart" class="btn btn-secondary"><i class="bi bi-arrow-counterclockwise"></i></button>
           </div>
         </div>
       </div>
@@ -175,6 +203,11 @@
     const absorptionMidiSeq = JSON.parse('{{ absorption_midi_seq|safe }}');
     const maxLength = Math.max(emissionMidiSeq.length, absorptionMidiSeq.length);
     
+    // Información del rango de longitud de onda
+    const rangoOriginal = JSON.parse('{{ rango_original|safe }}');
+    const rangoActual = JSON.parse('{{ rango_actual|safe }}');
+    const esFiltrado = JSON.parse('{{ es_filtrado|safe }}');
+    
     // Parámetros de reproducción
     let noteDuration = 0.05; // en segundos (muy rápido)
     let speedFactor = 1;
@@ -182,8 +215,8 @@
     let playing = false;
     let timer = null;
     
-    // Crear sintetizadores y nodos de ganancia para control de volumen
-    function createSynthChain(synthType, volumeValue) {
+    // Crear sintetizador y nodo de ganancia para control de volumen
+    function createSynthChain(synthType) {
       let synth;
       switch (synthType) {
         case 'fm':
@@ -195,62 +228,54 @@
         case 'mono':
           synth = new Tone.MonoSynth();
           break;
+        case 'pluck':
+          synth = new Tone.PluckSynth();
+          break;
+        case 'membrane':
+          synth = new Tone.MembraneSynth();
+          break;
+        case 'metal':
+          synth = new Tone.MetalSynth();
+          break;
         case 'synth':
         default:
           synth = new Tone.Synth();
           break;
       }
-      const gainNode = new Tone.Gain(volumeValue); // Se conectará al overallGain
-      synth.connect(gainNode);
-      return { synth, gainNode };
+      return synth;
     }
     
-    // Inicializar cadenas para emisión y absorción
-    let emissionChain = createSynthChain(document.getElementById('emissionSynthSelect').value, parseFloat(document.getElementById('emissionVolume').value));
-    let absorptionChain = createSynthChain(document.getElementById('absorptionSynthSelect').value, parseFloat(document.getElementById('absorptionVolume').value));
+    // Inicializar sintetizadores independientes
+    let emissionSynth = createSynthChain(document.getElementById('emissionSynthSelect').value);
+    let absorptionSynth = createSynthChain(document.getElementById('absorptionSynthSelect').value);
     
-    // Volumen general (máximo) – se conecta a destination
+    // Volumen general – se conecta a destination
     const overallGain = new Tone.Gain(parseFloat(document.getElementById('overallVolume').value)).toDestination();
-    // Conectar las salidas de cada cadena al nodo general:
-    emissionChain.gainNode.disconnect();
-    absorptionChain.gainNode.disconnect();
-    emissionChain.synth.connect(emissionChain.gainNode).connect(overallGain);
-    absorptionChain.synth.connect(absorptionChain.gainNode).connect(overallGain);
+    // Conectar los sintetizadores al nodo general:
+    emissionSynth.connect(overallGain);
+    absorptionSynth.connect(overallGain);
     
-    // Función que actualiza los tres volúmenes
-    function updateVolumes() {
+    // Función que actualiza el volumen
+    function updateVolume() {
       const overall = parseFloat(document.getElementById('overallVolume').value);
-      const emissionVal = parseFloat(document.getElementById('emissionVolume').value);
-      const absorptionVal = parseFloat(document.getElementById('absorptionVolume').value);
       overallGain.gain.value = overall;
-      emissionChain.gainNode.gain.value = overall * emissionVal;
-      absorptionChain.gainNode.gain.value = overall * absorptionVal;
       document.getElementById('overallVolumeValue').textContent = overall.toFixed(2);
-      document.getElementById('emissionVolumeValue').textContent = emissionVal.toFixed(2);
-      document.getElementById('absorptionVolumeValue').textContent = absorptionVal.toFixed(2);
     }
     
-    // Asignar el mismo handler a los tres controles de volumen
-    document.getElementById('overallVolume').addEventListener('input', updateVolumes);
-    document.getElementById('emissionVolume').addEventListener('input', updateVolumes);
-    document.getElementById('absorptionVolume').addEventListener('input', updateVolumes);
+    // Asignar el handler al control de volumen
+    document.getElementById('overallVolume').addEventListener('input', updateVolume);
     
-    // Al cambiar el sintetizador, se crea la nueva cadena y se actualiza el volumen
+    // Al cambiar los sintetizadores, se crean los nuevos sintetizadores
     document.getElementById('emissionSynthSelect').addEventListener('change', () => {
-      emissionChain.synth.dispose();
-      emissionChain.gainNode.dispose();
-      emissionChain = createSynthChain(document.getElementById('emissionSynthSelect').value, parseFloat(document.getElementById('emissionVolume').value));
-      emissionChain.synth.connect(emissionChain.gainNode).connect(overallGain);
-      // Dispara la actualización para el nuevo nodo
-      document.getElementById('emissionVolume').dispatchEvent(new Event('input'));
+      emissionSynth.dispose();
+      emissionSynth = createSynthChain(document.getElementById('emissionSynthSelect').value);
+      emissionSynth.connect(overallGain);
     });
+    
     document.getElementById('absorptionSynthSelect').addEventListener('change', () => {
-      absorptionChain.synth.dispose();
-      absorptionChain.gainNode.dispose();
-      absorptionChain = createSynthChain(document.getElementById('absorptionSynthSelect').value, parseFloat(document.getElementById('absorptionVolume').value));
-      absorptionChain.synth.connect(absorptionChain.gainNode).connect(overallGain);
-      // Dispara la actualización para el nuevo nodo
-      document.getElementById('absorptionVolume').dispatchEvent(new Event('input'));
+      absorptionSynth.dispose();
+      absorptionSynth = createSynthChain(document.getElementById('absorptionSynthSelect').value);
+      absorptionSynth.connect(overallGain);
     });
     
     // Checkboxes
@@ -272,9 +297,10 @@
     // Usamos el ancho real de la imagen
     const imageWidth = () => img.clientWidth;
     
-    // Ajustes de offset manual para alinear la barra con el área de datos
-    const offsetLeft = 85;   // ajusta según tu imagen
-    const offsetRight = 39;
+    // Ajustes de offset manual para alinear la barra con el área de datos.
+    // Si el espectro está filtrado se usan offsets distintos para compensar el recorte de la imagen.
+    const offsetLeft = esFiltrado ? 70 : 97;   // Ajusta según necesites para la imagen filtrada
+    const offsetRight = esFiltrado ? 38 : 63;
     
     function updateProgress() {
       const progress = currentIndex / (maxLength - 1);
@@ -290,13 +316,13 @@
       const eMidi = currentIndex < emissionMidiSeq.length ? emissionMidiSeq[currentIndex] : null;
       if (emissionOn && eMidi !== null) {
         const freqE = Tone.Frequency(eMidi, "midi").toFrequency();
-        emissionChain.synth.triggerAttackRelease(freqE, noteDuration);
+        emissionSynth.triggerAttackRelease(freqE, noteDuration);
       }
       
       const aMidi = currentIndex < absorptionMidiSeq.length ? absorptionMidiSeq[currentIndex] : null;
       if (absorptionOn && aMidi !== null) {
         const freqA = Tone.Frequency(aMidi, "midi").toFrequency();
-        absorptionChain.synth.triggerAttackRelease(freqA, noteDuration);
+        absorptionSynth.triggerAttackRelease(freqA, noteDuration);
       }
       
       updateProgress();
@@ -327,6 +353,7 @@
     function stopPlayback() {
       playing = false;
       if (timer) clearTimeout(timer);
+      document.getElementById('playPause').innerHTML = '<i class="bi bi-play-fill"></i>';
     }
     
     function restartPlayback() {
@@ -336,9 +363,20 @@
     }
     
     // Eventos de botones
-    document.getElementById('play').addEventListener('click', startPlayback);
-    document.getElementById('pause').addEventListener('click', pausePlayback);
-    document.getElementById('restart').addEventListener('click', restartPlayback);
+    const playPauseBtn = document.getElementById('playPause');
+    playPauseBtn.addEventListener('click', function() {
+      if (playing) {
+        pausePlayback();
+        playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+      } else {
+        startPlayback();
+        playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+      }
+    });
+    document.getElementById('restart').addEventListener('click', function() {
+      restartPlayback();
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    });
     
     // Control de velocidad
     document.getElementById('speed').addEventListener('input', function() {
@@ -358,48 +396,25 @@
       
       // En el offline, se recrea la cadena de volumen
       await Tone.Offline(async () => {
-        // Crear sintetizadores offline con la configuración actual de volúmenes
-        const eSynthOffline = (function() {
-          let synth;
-          switch(document.getElementById('emissionSynthSelect').value) {
-            case 'fm': synth = new Tone.FMSynth(); break;
-            case 'am': synth = new Tone.AMSynth(); break;
-            case 'mono': synth = new Tone.MonoSynth(); break;
-            case 'synth':
-            default: synth = new Tone.Synth(); break;
-          }
-          const gain = new Tone.Gain(parseFloat(document.getElementById('emissionVolume').value));
-          synth.connect(gain);
-          return { synth, gain };
-        })();
-        const aSynthOffline = (function() {
-          let synth;
-          switch(document.getElementById('absorptionSynthSelect').value) {
-            case 'fm': synth = new Tone.FMSynth(); break;
-            case 'am': synth = new Tone.AMSynth(); break;
-            case 'mono': synth = new Tone.MonoSynth(); break;
-            case 'synth':
-            default: synth = new Tone.Synth(); break;
-          }
-          const gain = new Tone.Gain(parseFloat(document.getElementById('absorptionVolume').value));
-          synth.connect(gain);
-          return { synth, gain };
-        })();
+        // Crear sintetizadores offline con la configuración actual
+        let emissionSynthOffline = createSynthChain(document.getElementById('emissionSynthSelect').value);
+        let absorptionSynthOffline = createSynthChain(document.getElementById('absorptionSynthSelect').value);
+        
         // Volumen general
         const overallGainOffline = new Tone.Gain(parseFloat(document.getElementById('overallVolume').value)).toDestination();
-        eSynthOffline.gain.connect(overallGainOffline);
-        aSynthOffline.gain.connect(overallGainOffline);
+        emissionSynthOffline.connect(overallGainOffline);
+        absorptionSynthOffline.connect(overallGainOffline);
         
         // Programar los eventos para cada señal
         for (let i = 0; i < maxLength; i++) {
           const time = i * noteDuration;
           if (emissionOn && i < emissionMidiSeq.length && emissionMidiSeq[i] !== null) {
             const freq = Tone.Frequency(emissionMidiSeq[i], "midi").toFrequency();
-            eSynthOffline.synth.triggerAttackRelease(freq, noteDuration, time);
+            emissionSynthOffline.triggerAttackRelease(freq, noteDuration, time);
           }
           if (absorptionOn && i < absorptionMidiSeq.length && absorptionMidiSeq[i] !== null) {
             const freq = Tone.Frequency(absorptionMidiSeq[i], "midi").toFrequency();
-            aSynthOffline.synth.triggerAttackRelease(freq, noteDuration, time);
+            absorptionSynthOffline.triggerAttackRelease(freq, noteDuration, time);
           }
         }
       }, totalDuration).then(renderedBuffer => {
@@ -500,10 +515,34 @@
       }, 3000);
     });
     
+    // Inicializar controles de rango de longitud de onda
+    const minWlInput = document.getElementById('min_wl');
+    const maxWlInput = document.getElementById('max_wl');
+    const resetRangeBtn = document.getElementById('reset-range');
+    
+    // Establecer valores iniciales en los campos de rango
+    if (esFiltrado) {
+      minWlInput.value = rangoActual[0].toFixed(1);
+      maxWlInput.value = rangoActual[1].toFixed(1);
+    } else {
+      // Sugerir valores por defecto (25% y 75% del rango total)
+      const rangoTotal = rangoOriginal[1] - rangoOriginal[0];
+      minWlInput.value = (rangoOriginal[0] + rangoTotal * 0.25).toFixed(1);
+      maxWlInput.value = (rangoOriginal[0] + rangoTotal * 0.75).toFixed(1);
+    }
+    
+    // Botón para resetear el rango y ver el espectro completo
+    resetRangeBtn.addEventListener('click', function() {
+      const form = document.getElementById('range-form');
+      minWlInput.value = '';
+      maxWlInput.value = '';
+      form.submit();
+    });
+    
     // Inicializar la barra de progreso
     updateProgress();
-    // Y también actualizar los volúmenes iniciales
-    updateVolumes();
+    // Y también actualizar el volumen inicial
+    updateVolume();
   </script>
 <!-- ... (final del documento) -->
 

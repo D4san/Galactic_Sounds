@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Biblioteca de Sonidos - MIDI Microtonal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    /* Forzar que la tarjeta tenga un aspecto cuadrado */
+    .card-container {
+      perspective: 1000px;
+      aspect-ratio: 1 / 1;
+    }
+    .card-flip {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .card-container.flipped .card-flip {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Ajuste para que la imagen ocupe más parte de la tarjeta */
+    .card-front .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .image-container {
+      position: relative;
+      overflow: hidden;
+      /* Ocupa el 70% de la altura de la tarjeta */
+      height: 70%;
+    }
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.5s ease;
+    }
+    .image-container:hover img {
+      transform: scale(1.05);
+    }
+    .image-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      width: 100%;
+      height: 0;
+      transition: .5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-container:hover .image-overlay {
+      height: 25%;
+    }
+    /* Botón para ampliar imagen */
+    .zoom-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .image-container:hover .zoom-btn {
+      opacity: 1;
+    }
+    /* Modal para imagen ampliada */
+    .modal-img {
+      max-height: 80vh;
+      object-fit: contain;
+    }
+    
+    /* Secciones restantes de la tarjeta (body y footer) se ajustan al 30% restante */
+    .card-body, .card-footer {
+      height: 15%;
+    }
+    .card-body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body class="galactic-bg">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">MIDI Microtonal</a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-light" href="/">Generador de MIDI</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <h1 class="display-5 mb-4">Biblioteca de Sonidos</h1>
+    <p>Sonidos cargados: {{ sounds|length }}</p>
+    
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+      {% for sound in sounds %}
+      <div class="col">
+        <div class="card-container">
+          <div class="card-flip">
+            <!-- Frente de la tarjeta -->
+            <div class="card-front">
+              <div class="card bg-secondary text-light">
+                <div class="image-container">
+                  <img src="{{ sound.image_url }}" class="card-img-top" alt="Imagen del espectro de {{ sound.title }}">
+                  <div class="image-overlay">
+                    <p class="text-white mb-0">Clic para más información</p>
+                  </div>
+                  <div class="zoom-btn" data-bs-toggle="modal" data-bs-target="#imageModal{{ loop.index }}">
+                    <i class="bi bi-zoom-in"></i>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">{{ sound.title }}</h5>
+                </div>
+                <div class="card-footer bg-dark">
+                  <audio controls class="w-100">
+                    <source src="{{ sound.audio_url }}" type="audio/mpeg">
+                    Tu navegador no soporta reproducción de audio.
+                  </audio>
+                </div>
+              </div>
+            </div>
+            <!-- Reverso de la tarjeta -->
+            <div class="card-back">
+              <div class="card bg-dark text-light h-100">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ sound.title }}</h5>
+                  <p class="card-text flex-grow-1">{{ sound.description }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Modal para imagen ampliada -->
+      <div class="modal fade" id="imageModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+              <img src="{{ sound.image_url }}" class="modal-img img-fluid" alt="{{ sound.title }}">
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Script para alternar el efecto flip al hacer clic en la tarjeta -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const cardContainers = document.querySelectorAll('.card-container');
+      cardContainers.forEach(container => {
+        container.addEventListener('click', function(e) {
+          // Evitar que se active el flip si se hace clic en el botón de zoom
+          if (!e.target.closest('.zoom-btn')) {
+            container.classList.toggle('flipped');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

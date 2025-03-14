@@ -182,38 +182,75 @@ def map_spectrum_to_sequential_scale_full(spectrum, max_val, central_map):
 #############################################
 
 def load_linear_spectrum(file_path):
-    # Desactivar el memory mapping para evitar bloqueos en Windows
-    with fits.open(file_path, memmap=False) as hdulist:
-        header = hdulist[0].header
-        flux = hdulist[0].data
-        crval1 = header['CRVAL1']
-        crpix1 = header['CRPIX1']
-        cdelt1 = header['CDELT1']
-        num_pixels = header['NAXIS1']
-        wavelength = crval1 + (np.arange(num_pixels) - (crpix1 - 1)) * cdelt1
+    """
+    Carga un espectro lineal desde un archivo de texto (ASCII, .dat o .txt) con la siguiente estructura:
+    
+      #Wavelength     Normalized Flux
+      #[Angstrom]       [Counts]
+      3650.00           0.000016
+      3652.00           0.239410
+      3654.00           0.232012
+      3656.00           0.229009
+      ...
+
+    Se ignoran las líneas de comentario (las que comienzan con '#').
+    
+    Retorna:
+      - wavelength: array de longitudes de onda.
+      - flux: array del flujo normalizado.
+    """
+    import pandas as pd
+    # Lee el archivo ignorando líneas que empiezan con '#' y usando espacios como delimitador
+    df = pd.read_csv(file_path, delim_whitespace=True, comment='#', header=None, 
+                     names=["Wavelength", "NormalizedFlux"])
+    
+    wavelength = df["Wavelength"].to_numpy()
+    flux = df["NormalizedFlux"].to_numpy()
+    
     return wavelength, flux
 
+
 def analizar_espectro(wavelength, flux, region_continuo, fig=False):
+    """
+    Analiza el espectro separándolo en componentes de emisión y absorción usando un umbral fijo de 1.
+    
+    Parámetros:
+      - wavelength: array de longitudes de onda.
+      - flux: array de flujo normalizado.
+      - region_continuo: tupla (λ_min, λ_max) para calcular la media y desviación en la región del continuo.
+      - fig: si es True, genera un gráfico de la división.
+    
+    Retorna un diccionario con:
+      - 'emision': (wavelength_em, flux_em) para valores de flujo ≥ 1.
+      - 'absorcion': (wavelength_abs, flux_abs) para valores de flujo < 1.
+      - 'media_continuo': media calculada en la región del continuo.
+      - 'desviacion_continuo': desviación estándar en la región del continuo.
+      - 'full_spectrum': (wavelength, flux) completo.
+    """
+    # Seleccionar la región para el continuo
     mask_continuo = (wavelength > region_continuo[0]) & (wavelength < region_continuo[1])
     continuo_flux = flux[mask_continuo]
     
     media_continuo = np.mean(continuo_flux)
     desviacion_continuo = np.std(continuo_flux)
     
-    mask_emision = flux >= media_continuo
-    mask_absorcion = flux < media_continuo
+    # Definir umbral fijo en 1
+    threshold = 1.0
+    mask_emision = flux >= threshold
+    mask_absorcion = flux < threshold
     
     espectro_emision = (wavelength[mask_emision], flux[mask_emision])
     espectro_absorcion = (wavelength[mask_absorcion], flux[mask_absorcion])
     
     if fig:
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(12, 6))
         plt.plot(wavelength, flux, label='Espectro original', color='gray', alpha=0.6)
         plt.scatter(espectro_emision[0], espectro_emision[1], label='Emisión', color='red', s=10)
         plt.scatter(espectro_absorcion[0], espectro_absorcion[1], label='Absorción', color='blue', s=10)
         plt.fill_between(wavelength, media_continuo - desviacion_continuo, media_continuo + desviacion_continuo,
                          color='gray', alpha=0.3, label=f'Ruido (1σ = {desviacion_continuo:.2f})')
-        plt.axhline(media_continuo, color='black', linestyle='--', label=f'Media del continuo ({media_continuo:.2f})')
+        plt.axhline(threshold, color='black', linestyle='--', label=f'Threshold = {threshold:.2f}')
         plt.xlabel('Longitud de onda (Å)')
         plt.ylabel('Flujo Normalizado')
         plt.title('División del Espectro en Emisión y Absorción')
@@ -233,6 +270,53 @@ def align_spectrum(full_wavelengths, spectrum_wavelengths, spectrum_values, cent
     wavelength_to_value = dict(zip(spectrum_wavelengths, spectrum_values))
     aligned_spectrum = [wavelength_to_value.get(wl, central_val) for wl in full_wavelengths]
     return aligned_spectrum
+
+#############################################
+# Sección 5: Funciones para Selección de Rango
+#############################################
+
+def filtrar_espectro_por_rango(resultados, rango_longitud_onda):
+    """
+    Filtra los resultados del análisis del espectro según un rango de longitud de onda.
+    
+    Parámetros:
+      - resultados: diccionario con los resultados del análisis del espectro.
+      - rango_longitud_onda: tupla (λ_min, λ_max) para filtrar el espectro.
+    
+    Retorna un diccionario con la misma estructura que el original pero filtrado por el rango.
+    """
+    # Extraer datos originales
+    full_wavelengths, full_flux = resultados["full_spectrum"]
+    emission_wl, emission_flux = resultados["emision"]
+    absorption_wl, absorption_flux = resultados["absorcion"]
+    media_continuo = resultados["media_continuo"]
+    desviacion_continuo = resultados["desviacion_continuo"]
+    
+    # Filtrar el espectro completo
+    mask_full = (full_wavelengths >= rango_longitud_onda[0]) & (full_wavelengths <= rango_longitud_onda[1])
+    filtered_full_wavelengths = full_wavelengths[mask_full]
+    filtered_full_flux = full_flux[mask_full]
+    
+    # Filtrar emisión
+    mask_emission = (emission_wl >= rango_longitud_onda[0]) & (emission_wl <= rango_longitud_onda[1])
+    filtered_emission_wl = emission_wl[mask_emission]
+    filtered_emission_flux = emission_flux[mask_emission]
+    
+    # Filtrar absorción
+    mask_absorption = (absorption_wl >= rango_longitud_onda[0]) & (absorption_wl <= rango_longitud_onda[1])
+    filtered_absorption_wl = absorption_wl[mask_absorption]
+    filtered_absorption_flux = absorption_flux[mask_absorption]
+    
+    # Crear nuevo diccionario de resultados filtrados
+    return {
+        'emision': (filtered_emission_wl, filtered_emission_flux),
+        'absorcion': (filtered_absorption_wl, filtered_absorption_flux),
+        'media_continuo': media_continuo,
+        'desviacion_continuo': desviacion_continuo,
+        'full_spectrum': (filtered_full_wavelengths, filtered_full_flux),
+        'rango_original': resultados.get('rango_original', None) or (min(full_wavelengths), max(full_wavelengths)),
+        'es_filtrado': True
+    }
 
 if __name__ == "__main__":
     scale = create_microtonal_scale_otoman(octaves=(1, 7))

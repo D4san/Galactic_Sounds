@@ -16,13 +16,16 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">MIDI Microtonal</a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-light" href="/library">Biblioteca de Sonidos</a>
+      </div>
     </div>
   </nav>
 
   <div class="container my-5">
     <div class="text-center">
       <h1 class="mb-4 display-4 text-white">Generador de MIDI Microtonal</h1>
-      <p class="lead text-white-50">Transforma tu espectro en una obra musical intergaláctica</p>
+      <p class="lead text-white-50">Convierte tu espectro en una obra musical</p>
     </div>
     
     <div class="card shadow-lg p-4 bg-dark bg-opacity-75 border-0 rounded">
@@ -32,8 +35,29 @@
           <input type="text" class="form-control" name="nombre" id="nombre" value="MiObra" required>
         </div>
         <div class="mb-3">
-          <label for="archivo" class="form-label text-white">Sube tu archivo FITS:</label>
-          <input type="file" class="form-control" name="archivo" id="archivo" accept=".fits" required>
+          <label for="archivo" class="form-label text-white">Sube tu archivo en formato ASCII (ej. formato NED):</label>
+          <input type="file" class="form-control" name="archivo" id="archivo" accept=".txt,.dat,.ascii" required>
+          <div class="form-text text-white-50">
+            El archivo debe tener la siguiente estructura:
+          </div>
+          <p class="mb-3">
+            <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#fileStructure" aria-expanded="false" aria-controls="fileStructure">
+              Ver ejemplo de estructura del archivo
+            </button>
+          </p>
+          <div class="collapse" id="fileStructure">
+            <div class="card card-body">
+              <pre class="bg-light text-dark p-2 rounded" style="font-size: 0.9em;">
+#Wavelength     Normalized Flux
+#[Angstrom]       [Counts]
+3650.00           0.000016
+3652.00           0.239410
+3654.00           0.232012
+3656.00           0.229009
+...
+              </pre>
+            </div>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary w-100">Previsualizar Espectro</button>
       </form>

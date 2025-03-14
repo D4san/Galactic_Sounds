@@ -26,6 +26,8 @@ body.galactic-bg {
   /* Ajustes en tarjetas para un look más moderno y redondeado */
   .card {
     border-radius: 15px;
+    color: #fff;
+    background-color: rgba(30, 30, 30, 0.85);
   }
   
   /* Personalización de formularios y controles */
